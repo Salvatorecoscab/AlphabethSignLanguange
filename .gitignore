@@ -1,0 +1,2 @@
+# ignore the api key file in the folder Model
+Model/roboflow_api_key.txt
