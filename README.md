@@ -4,6 +4,15 @@ In this repository there are two folders.
 
 One of them is for develop the model using python, and the other one is to create the mobile app
 
+<!-- Insert image Alphabet.png -->
+![image](./Alphabet.png)
+
+## Folder to develop the model
+https://drive.google.com/drive/folders/1cgRuVANXII3ChgGIRYGLIyGkR4ozRCKK?usp=drive_link
+
+
+## Resources
+
 Here are some resources:
 
 https://www.youtube.com/watch?v=wuZtUMEiKWY&t=267s&ab_channel=Roboflow
