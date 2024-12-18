@@ -16,7 +16,7 @@ def extract_number(filename):
 # Configuration
 # letter = "A"
 n = 10  # Save one frame every n frames
-capture_duration = 2  # Duration in seconds
+capture_duration = 3  # Duration in seconds
 
 # Create the output folder structure
 output_folder = f'./data/{letter}'
@@ -60,7 +60,7 @@ if not cam.isOpened():
 # Get frames per second (FPS) if available
 fps = cam.get(cv2.CAP_PROP_FPS)
 print(f"FPS: {fps}")
-
+time.sleep(1)
 # Flag to signal when to stop the capture
 stop_capture = False
 
