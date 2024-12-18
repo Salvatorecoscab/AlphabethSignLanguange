@@ -3,7 +3,9 @@ import os
 import threading
 import time
 import re
-
+import sys
+person = "Salvador"
+letter=sys.argv[1]
 # Custom sorting function
 def extract_number(filename):
     # Extract number from the filename using regex
@@ -12,8 +14,7 @@ def extract_number(filename):
 
 
 # Configuration
-letter = "A"
-person = "Salvador"
+# letter = "A"
 n = 10  # Save one frame every n frames
 capture_duration = 2  # Duration in seconds
 
