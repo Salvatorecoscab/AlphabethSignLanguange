@@ -88,7 +88,7 @@ try:
 
         # Save every nth frame
         if count % n == 0:
-            file_name = os.path.join(output_folder, f"{person}_{current_frame}.jpg")
+            file_name = os.path.join(output_folder, f"{person}_{letter}_{current_frame}.jpg")
             print(f"Saving: {file_name}")
             cv2.imwrite(file_name, frame)
             current_frame += 1
