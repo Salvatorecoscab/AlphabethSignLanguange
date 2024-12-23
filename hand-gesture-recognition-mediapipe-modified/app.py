@@ -97,7 +97,8 @@ def main():
 
     #  ########################################################################
     mode = 0
-
+    last_hand_sign_id = None
+    reset_sequence = False
     while True:
         fps = cvFpsCalc.get()
 
@@ -138,13 +139,40 @@ def main():
                 # Write to the dataset file
                 logging_csv(number, mode, pre_processed_landmark_list,
                             pre_processed_point_history_list)
-
+               
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
-                if hand_sign_id == 8:  # "i" sign
+                # Detectar 'k'
+                if hand_sign_id == 22:
+                    last_hand_sign_id = 22
+                    reset_sequence = False  # La secuencia se inicia, no hay necesidad de reiniciar
+
+                # Detectar 'p' inmediatamente después de 'k'
+                elif hand_sign_id == 13 and last_hand_sign_id == 22:
+                    hand_sign_id = 22  # Mantén como 'k'
+                    reset_sequence = True  # Marca que la secuencia se ha procesado
+
+                # Detectar cualquier otro signo o resetear la secuencia
+                else:
+                    if reset_sequence:
+                        # Si la secuencia "k -> p" se completó, resetea
+                        last_hand_sign_id = None
+                        reset_sequence = False
+                    else:
+                        # Si no estamos en una secuencia, actualiza el último signo detectado normalmente
+                        last_hand_sign_id = hand_sign_id
+
+
+
+                if hand_sign_id == 25:  # "z" sign
                     point_history.append(landmark_list[8])
+                elif hand_sign_id == 11:  # "n" sign
+                    point_history.append(landmark_list[8])
+                    if  finger_gesture_text != "Stop":
+                        hand_sign_id = 26
                 else:
                     point_history.append([0, 0])
+
 
                 # Finger gesture classification
                 finger_gesture_id = 0
@@ -157,7 +185,7 @@ def main():
                 finger_gesture_history.append(finger_gesture_id)
                 most_common_fg_id = Counter(
                     finger_gesture_history).most_common()
-
+                finger_gesture_text = point_history_classifier_labels[most_common_fg_id[0][0]]
                 # Drawing part
                 debug_image = draw_bounding_rect(use_brect, debug_image, brect)
                 debug_image = draw_landmarks(debug_image, landmark_list)
@@ -166,12 +194,12 @@ def main():
                     brect,
                     handedness,
                     keypoint_classifier_labels[hand_sign_id],
-                    point_history_classifier_labels[most_common_fg_id[0][0]],
+                    finger_gesture_text,
                 )
         else:
             point_history.append([0, 0])
 
-        # debug_image = draw_point_history(debug_image, point_history)
+        debug_image = draw_point_history(debug_image, point_history)
         debug_image = draw_info(debug_image, fps, mode, number)
 
         # Screen reflection #############################################################
@@ -183,14 +211,6 @@ def main():
 
 def select_mode(key, mode):
     number = -1
-    # if 48 <= key <= 57:  # 0 ~ 9
-    #     number = key - 48
-    # if key == 110:  # n
-    #     mode = 0
-    # if key == 107:  # k
-    #     mode = 1
-    # if key == 104:  # h
-    #     mode = 2
     # return number, mode
     if 97 <= key <= 105: # a ~ i if mode is dynamic sign a=j b=k c=ñ d=q e=x f=z
         number = key - 97
@@ -200,6 +220,23 @@ def select_mode(key, mode):
         number = key - 100
     if key == 121: # y 
         number = key - 101
+    # j key
+    if key == 106:
+        number = 21
+    # k key
+    if key == 107:
+        number = 22
+    # q key
+    if key == 113:
+        number = 23
+    # x key
+    if key == 120:
+        number = 24
+    # z key
+    if key == 122:
+        number = 25
+    
+    
 
     
 
