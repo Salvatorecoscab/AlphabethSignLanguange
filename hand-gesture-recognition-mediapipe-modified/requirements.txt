@@ -2,3 +2,4 @@ mediapipe
 tensorflow
 flask
 opencv
+gunicorn

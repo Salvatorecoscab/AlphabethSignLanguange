@@ -2,7 +2,7 @@
 
 
 # URL of the Flask app
-URL="http://0.0.0.0:5000/classify"
+URL="http://127.0.0.1:8080/classify"
 
 # Path to the test image
 IMAGE_PATH="testCase.png"
