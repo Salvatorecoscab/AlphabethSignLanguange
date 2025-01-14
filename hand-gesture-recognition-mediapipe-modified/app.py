@@ -129,8 +129,9 @@ def main():
                 # Bounding box calculation
                 brect = calc_bounding_rect(debug_image, hand_landmarks)
                 # Landmark calculation
+                # print(hand_landmarks)
                 landmark_list = calc_landmark_list(debug_image, hand_landmarks)
-
+                # print(landmark_list)
                 # Conversion to relative coordinates / normalized coordinates
                 pre_processed_landmark_list = pre_process_landmark(
                     landmark_list)
@@ -139,7 +140,8 @@ def main():
                 # Write to the dataset file
                 logging_csv(number, mode, pre_processed_landmark_list,
                             pre_processed_point_history_list)
-               
+                # print type of pre_processed_landmark_list
+                print(type(pre_processed_landmark_list[0]))
                 # Hand sign classification
                 hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
                 # Detectar 'k'

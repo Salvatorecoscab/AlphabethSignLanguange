@@ -22,15 +22,17 @@ import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
+import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.abs
+import KeyPointClassifier
+
 class OverlayView(context: Context?, attrs: AttributeSet?) :
     View(context, attrs) {
-
+    private var classifier: KeyPointClassifier? = null
     private var results: HandLandmarkerResult? = null
     private var linePaint = Paint()
     private var pointPaint = Paint()
@@ -38,12 +40,21 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     private var scaleFactor: Float = 1f
     private var imageWidth: Int = 1
     private var imageHeight: Int = 1
-
+    private var handSignId: Int = 0
     private var pre_processed_landmark_list: List<Float> = emptyList()
     // Variable to hold the letter
-    private var letter = "A"
+    private var letters = listOf("A", "B", "C", "D", "E", "F", "G", "H", "I", "L", "M", "N", "O", "P", "R", "S", "T", "U", "V", "W", "Y","J","K","Q","X", "Z","Ñ")
     init {
         initPaints()
+        // Inicializar el clasificador si el contexto no es null
+        context?.let {
+            classifier = KeyPointClassifier(it)
+        }
+    }
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        // Liberar recursos del clasificador
+        classifier?.close()
     }
 
     fun clear() {
@@ -65,32 +76,64 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         pointPaint.style = Paint.Style.FILL
     }
 
+    private fun calcLandmarkList(imageWidth: Int, imageHeight: Int, landmarks: List<NormalizedLandmark>): List<List<Int>> {
+        val landmarkPoint = mutableListOf<List<Int>>()
 
+        // Iterar sobre cada landmark y calcular las coordenadas absolutas en píxeles
+        for (landmark in landmarks) {
+            val landmarkX = (landmark.x() * imageWidth).toInt().coerceAtMost(imageWidth - 1)
+            val landmarkY = (landmark.y() * imageHeight).toInt().coerceAtMost(imageHeight - 1)
+            landmarkPoint.add(listOf(landmarkX, landmarkY))
+        }
 
-
-    // Function to draw a bounding rectangle with a letter
-    fun drawLetter(canvas: Canvas, x: Float, y: Float, letter: String) {
-        val rectWidth = 100f
-        val rectHeight = 100f
-        val rectLeft = x - rectWidth / 2
-        val rectTop = y - rectHeight / 2
-        val rectRight = x + rectWidth / 2
-        val rectBottom = y + rectHeight / 2
-
-        // Draw the rectangle
-        canvas.drawRect(rectLeft, rectTop, rectRight, rectBottom, linePaint)
-
-        // Draw the letter centered in the rectangle
-        val textX = x
-        val textY = y - (pointPaint.descent() + pointPaint.ascent()) / 2
-        canvas.drawText(letter, textX, textY, pointPaint)
+        return landmarkPoint
     }
+
+    fun preProcessLandmark(landmarkList: List<List<Int>>): List<Double> {
+        // Hacer una copia profunda de la lista de entrada
+        val tempLandmarkList = landmarkList.map { it.toMutableList() }.toMutableList()
+
+        // Convertir a coordenadas relativas
+        var baseX = 0
+        var baseY = 0
+        for ((index, landmarkPoint) in tempLandmarkList.withIndex()) {
+            if (index == 0) {
+                baseX = landmarkPoint[0]
+                baseY = landmarkPoint[1]
+            }
+            tempLandmarkList[index][0] = tempLandmarkList[index][0] - baseX
+            tempLandmarkList[index][1] = tempLandmarkList[index][1] - baseY
+        }
+
+        // Convertir a una lista unidimensional
+        val flattenedList = tempLandmarkList.flatten()
+
+        // Normalización
+        val maxValue = flattenedList.map { kotlin.math.abs(it) }.maxOrNull()?.toDouble() ?: 1.0
+
+        val normalizedList = flattenedList.map { it / maxValue }
+
+        return normalizedList
+    }
+
+
+
+
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
+
         results?.let { handLandmarkerResult ->
             for (landmark in handLandmarkerResult.landmarks()) {
-                // Inicializamos valores para encontrar los límites del bounding box
+                classifier?.let {
+                    // Calcula la lista de landmarks
+                    val landmarkList = calcLandmarkList(imageWidth, imageHeight, landmark)
+                    // Preprocesa los landmarks
+                    val preprocessedLandmarkList = preProcessLandmark(landmarkList).map { it.toFloat() }
+                    // Clasifica el signo de la mano
+                    handSignId = it.classify(preprocessedLandmarkList)
+
+                }
                 var minX = Float.MAX_VALUE
                 var minY = Float.MAX_VALUE
                 var maxX = Float.MIN_VALUE
@@ -98,8 +141,12 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
                 // Recorremos cada punto del landmark
                 for (normalizedLandmark in landmark) {
+                    //empty list of landmarpoint
+                    val landmarkpoint = mutableListOf<Float>()
                     val x = normalizedLandmark.x() * imageWidth * scaleFactor
                     val y = normalizedLandmark.y() * imageHeight * scaleFactor
+                    //append x and y to the list
+
 
                     // Actualizamos los límites del bounding box
                     minX = min(minX, x)
@@ -138,37 +185,9 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                 }
                 val textX = (minX + maxX) / 2
                 val textY = (minY + maxY) / 2 - (textPaint.descent() + textPaint.ascent()) / 2
-                canvas.drawText(letter, textX, textY, textPaint)
+                canvas.drawText(letters[handSignId], textX, textY, textPaint)
             }
         }
-    }
-
-    fun preProcessLandmark(landmarkList: List<List<Float>>): List<Float> {
-        val tempLandmarkList = landmarkList.map { it.toMutableList() }
-
-        // Convertir a coordenadas relativas
-        var baseX = 0f
-        var baseY = 0f
-        for (index in tempLandmarkList.indices) {
-            if (index == 0) {
-                baseX = tempLandmarkList[index][0]
-                baseY = tempLandmarkList[index][1]
-            }
-
-            tempLandmarkList[index][0] = tempLandmarkList[index][0] - baseX
-            tempLandmarkList[index][1] = tempLandmarkList[index][1] - baseY
-        }
-
-        // Convertir a una lista unidimensional
-        val flatLandmarkList = tempLandmarkList.flatten()
-
-        // Normalización
-        val maxValue = flatLandmarkList.maxOf { abs(it) }
-
-        // Normalizar los valores
-        val normalizedLandmarkList = flatLandmarkList.map { it / maxValue }
-
-        return normalizedLandmarkList
     }
 
 
@@ -181,8 +200,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         results = handLandmarkerResults
 
 
-//        # Hand sign classification
-//        hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
+
         this.imageHeight = imageHeight
         this.imageWidth = imageWidth
 
