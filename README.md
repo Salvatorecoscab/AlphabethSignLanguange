@@ -6,8 +6,6 @@ Este proyecto es una aplicación nativa para Android que puede reconocer y tradu
 
 Aquí puedes ver una demostración en video del funcionamiento de la aplicación en Android.
 
-*(Aquí puedes insertar un GIF o un enlace a un video de YouTube)*
-
 ![Demo de la app](./images/outputapp.gif)
 
 ## Screenshots de la Interfaz
